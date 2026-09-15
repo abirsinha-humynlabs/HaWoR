@@ -154,11 +154,18 @@ def main():
                 tr = np.asarray(tr); o = np.argsort(fi[tr]); tr = tr[o]
                 t = fi[tr].astype(float)
                 for j in range(21):
-                    for dim in range(2):
-                        k2[tr, j, dim] = _smooth_series(t, z['kp2d_raw'][tr, j, dim], a.kp_h)
                     for dim in range(3):
                         k3[tr, j, dim] = _smooth_series(t, z['kp3d_cam_raw'][tr, j, dim], a.kp_h)
                 smoothed[tr] = True
+        # kp2d is DEFINED as project(kp3d_cam, K) for this producer - unlike the source repo, where
+        # kp2d was MediaPipe pixels and so a genuinely independent signal worth smoothing on its own.
+        # Smoothing the two independently desynchronises them and breaks the delivery's reprojection
+        # gate (measured: reproj_median 0.000 -> 1.195 px). Re-derive 2D from the smoothed 3D so the
+        # two keep describing the same camera.
+        K = np.asarray(z['K'], dtype=np.float64)
+        fx, fy, cx, cy = K[0, 0], K[1, 1], K[0, 2], K[1, 2]
+        Zc = np.clip(k3[..., 2], 1e-6, None)
+        k2 = np.stack([fx * k3[..., 0] / Zc + cx, fy * k3[..., 1] / Zc + cy], axis=-1)
         z['kp2d'] = k2; z['kp3d_cam'] = k3
         # honest motion-retention: a filter that flattens real motion is not a fix
         def wrist_steps(arr):
