@@ -22,9 +22,44 @@ else:
             pass
 
 
-def detect_track(imgfiles, thresh=0.5):
-    
+def detect_track(imgfiles, thresh=0.5, track_id_handedness=None):
+    """Detect + track hands.
+
+    ``track_id_handedness`` (or env HAWOR_TRACK_FIX=1) enables a fix for a defect in the stock
+    per-frame filter below. Default is False, i.e. stock behaviour, bit-for-bit.
+
+    THE DEFECT. The stock loop keeps at most one 'right' and one 'left' box per frame,
+    first-come-first-served in detector output order:
+
+        if (not find_right and handedness[idx] > 0) or (not find_left and handedness[idx] == 0):
+
+    Handedness is a per-box classification and it is sometimes wrong. When the detector labels
+    BOTH hands 'right' in a frame, the first box takes the right slot and the second - the real
+    right hand, on a stable tracker id at high confidence - is discarded outright. It is not
+    recorded as a left either; the frame simply loses that hand. Measured on episode_048: 237 of
+    1823 frames (13%) hit this collision. Those frames then fall through to the CMIB infiller,
+    which fabricates a pose with no image evidence - the source of the sudden multi-hundred-pixel
+    drifts (e.g. right hand, frames 1285-1337 / t=42.8-44.6 s).
+
+    Not recoverable downstream: interpolate_bboxes() in hawor_video.py only bridges gaps marked by
+    det=False or an all-zero box, and this function hardcodes det=True and never emits a zero box,
+    so that path is dead in the video pipeline.
+
+    THE FIX. Handedness is a property of a TRACK, not of a frame - which hawor_video.py already
+    assumes, since it votes one handedness per track and forces it constant over each chunk. So:
+    collect every tracked detection first, take the majority vote per tracker id, and only then
+    allow at most one box per side per frame, resolving collisions by track identity and breaking
+    ties on confidence rather than iteration order. One mislabelled frame can no longer evict a
+    hand the tracker is holding.
+    """
+    import os as _os
+    if track_id_handedness is None:
+        track_id_handedness = _os.environ.get('HAWOR_TRACK_FIX', '0') == '1'
+
     hand_det_model = YOLO('./weights/external/detector.pt')
+
+    if track_id_handedness:
+        return _detect_track_by_trackid(hand_det_model, imgfiles, thresh)
 
     # Run
     boxes_ = []
@@ -77,6 +112,63 @@ def detect_track(imgfiles, thresh=0.5):
     boxes_ = np.array(boxes_, dtype=object)
 
     return boxes_, tracks
+
+
+def _detect_track_by_trackid(hand_det_model, imgfiles, thresh):
+    """Track-id-based handedness. See detect_track.__doc__.
+    Returns the identical structure to the stock path: {tid: [{frame, det, det_box, det_handedness}]}."""
+    from collections import defaultdict
+
+    # pass 1 - every tracked detection, no per-frame gating
+    per_frame = []
+    for t, imgpath in enumerate(tqdm(imgfiles)):
+        img_cv2 = cv2.imread(imgpath)
+        with torch.no_grad():
+            with autocast():
+                results = hand_det_model.track(img_cv2, conf=thresh, persist=True, verbose=False)
+        b = results[0].boxes
+        xyxy = b.xyxy.cpu().numpy()
+        confs = b.conf.cpu().numpy()
+        hands = b.cls.cpu().numpy()
+        ids = b.id.cpu().numpy() if b.id is not None else np.array([-1] * len(xyxy))
+        boxes = np.hstack([xyxy, confs[:, None]])
+        dets = []
+        for idx in range(len(boxes)):
+            tid = int(ids[idx])
+            if tid == -1:                       # same fallback ids the stock path uses
+                tid = 10000 if hands[idx] > 0 else 5000
+            dets.append({'frame': t, 'det': True, 'det_box': boxes[[idx]],
+                         'det_handedness': hands[[idx]], '_tid': tid, '_conf': float(confs[idx])})
+        per_frame.append(dets)
+
+    # pass 2 - one handedness per tracker id by majority; same rule hawor_video.py applies later
+    votes = defaultdict(list)
+    for dets in per_frame:
+        for d in dets:
+            votes[d['_tid']].append(float(d['det_handedness'][0]))
+    side = {tid: (1 if np.mean(v) >= 0.5 else 0) for tid, v in votes.items()}
+
+    # pass 3 - at most one box per side per frame (preserves the downstream one-entry-per
+    # (hand, frame) invariant), chosen by track identity, ties broken on confidence
+    tracks, n_collision = {}, 0
+    for dets in per_frame:
+        best = {}
+        for d in dets:
+            sd = side[d['_tid']]
+            if sd in best:
+                n_collision += 1
+                if d['_conf'] <= best[sd]['_conf']:
+                    continue
+            best[sd] = d
+        for d in best.values():
+            tracks.setdefault(d['_tid'], []).append(
+                {'frame': d['frame'], 'det': True, 'det_box': d['det_box'],
+                 'det_handedness': d['det_handedness']})
+
+    kept = sum(len(v) for v in tracks.values())
+    print(f'[track-id handedness] kept {kept} detections across {len(tracks)} tracks; '
+          f'{n_collision} same-side collisions resolved by confidence')
+    return np.array([], dtype=object), np.array(tracks, dtype=object)
 
 
 def parse_chunks(frame, boxes, min_len=16):
