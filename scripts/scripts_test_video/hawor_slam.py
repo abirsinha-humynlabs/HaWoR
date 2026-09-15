@@ -62,7 +62,11 @@ def hawor_slam(args, start_idx, end_idx):
 
     ##### Run SLAM #####
     # Use Masking
-    masks = np.load(f'{video_folder}/tracks_{start_idx}_{end_idx}/model_masks.npy', allow_pickle=True)
+    # mmap: this array is 3.8 GB and every consumer downsamples it immediately
+    # (preprocess_masks -> 328x584, est_scale_hybrid -> pred_depth size), so there is no
+    # reason to hold it resident. Same values, paged on demand.
+    masks = np.load(f'{video_folder}/tracks_{start_idx}_{end_idx}/model_masks.npy',
+                    allow_pickle=True, mmap_mode='r')
     masks = torch.from_numpy(masks)
     print(masks.shape)
 

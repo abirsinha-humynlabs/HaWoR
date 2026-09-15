@@ -95,7 +95,14 @@ def hawor_motion_estimation(args, start_idx, end_idx, seq_folder):
     img = cv2.imread(imgfiles[0])
     img_center = [img.shape[1] / 2, img.shape[0] / 2]# w/2, h/2  
     H, W = img.shape[:2]
-    model_masks = np.zeros((len(imgfiles), H, W))
+    # MEMORY: default float64 here is 1823*1080*1920*8 = 30.2 GB for a 60 s 1080p clip
+    # (HaWoR's example video is 121 frames). mask from render_multiple is already bool and
+    # the array is thresholded with > 0 below, so accumulate-then-threshold == logical OR.
+    # bool alone is still 3.8 GB resident, which OOM-killed this 16 GB box mid-run, so write
+    # straight into the .npy as a memmap: identical bytes, identical values, ~0 RAM.
+    _mask_path = f'{seq_folder}/tracks_{start_idx}_{end_idx}/model_masks.npy'
+    model_masks = np.lib.format.open_memmap(_mask_path, mode='w+', dtype=bool,
+                                            shape=(len(imgfiles), H, W))
 
     bin_size = 128
     max_faces_per_bin = 20000
@@ -212,10 +219,12 @@ def hawor_motion_estimation(args, start_idx, end_idx, seq_folder):
                 vertices_i = vertices[[img_i]]
                 rend, mask = renderer.render_multiple(vertices_i.unsqueeze(0).cuda(), faces, verts_color.unsqueeze(0).cuda(), cameras, lights)
                 
-                model_masks[frame_ck[img_i]] += mask
+                model_masks[frame_ck[img_i]] |= mask
                 
-    model_masks = model_masks > 0 # bool
-    np.save(f'{seq_folder}/tracks_{start_idx}_{end_idx}/model_masks.npy', model_masks)
+    # already bool and already written in place by the memmap above; > 0 and np.save would
+    # each materialise the whole 3.8 GB array in RAM again, which is what we are avoiding.
+    model_masks.flush()
+    del model_masks
     joblib.dump(frame_chunks_all, f'{seq_folder}/tracks_{start_idx}_{end_idx}/frame_chunks_all.npy')
     return frame_chunks_all, img_focal
 
