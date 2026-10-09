@@ -4,6 +4,7 @@ from hawor.utils.geometry import aa_to_rotmat
 import numpy as np
 import sys
 import os
+from hawor.utils.device import get_device
 
 def block_print():
     sys.stdout = open(os.devnull, 'w')
@@ -47,7 +48,7 @@ def run_mano(trans, root_orient, hand_pose, is_right=None, betas=None, use_cuda=
     mano_cfg = {k.lower(): v for k,v in MANO_cfg.items()}
     mano = MANO(**mano_cfg)
     if use_cuda:
-        mano = mano.cuda()
+        mano = mano.to(get_device())
 
     B, T, _ = root_orient.shape
     NUM_JOINTS = 15
@@ -62,7 +63,7 @@ def run_mano(trans, root_orient, hand_pose, is_right=None, betas=None, use_cuda=
     rotmat_mano_params['transl'] = trans.reshape(B*T, 3)
 
     if use_cuda:
-        mano_output = mano(**{k: v.float().cuda() for k,v in rotmat_mano_params.items()}, pose2rot=False)
+        mano_output = mano(**{k: v.float().to(get_device()) for k,v in rotmat_mano_params.items()}, pose2rot=False)
     else:
         mano_output = mano(**{k: v.float() for k,v in rotmat_mano_params.items()}, pose2rot=False)
 
@@ -126,7 +127,7 @@ def run_mano_left(trans, root_orient, hand_pose, is_right=None, betas=None, use_
     mano_cfg = {k.lower(): v for k,v in MANO_cfg.items()}
     mano = MANO(**mano_cfg)
     if use_cuda:
-        mano = mano.cuda()
+        mano = mano.to(get_device())
     
     # fix MANO shapedirs of the left hand bug (https://github.com/vchoutas/smplx/issues/48)
     if fix_shapedirs:
@@ -145,7 +146,7 @@ def run_mano_left(trans, root_orient, hand_pose, is_right=None, betas=None, use_
     rotmat_mano_params['transl'] = trans.reshape(B*T, 3)
 
     if use_cuda:
-        mano_output = mano(**{k: v.float().cuda() for k,v in rotmat_mano_params.items()}, pose2rot=False)
+        mano_output = mano(**{k: v.float().to(get_device()) for k,v in rotmat_mano_params.items()}, pose2rot=False)
     else:
         mano_output = mano(**{k: v.float() for k,v in rotmat_mano_params.items()}, pose2rot=False)
 

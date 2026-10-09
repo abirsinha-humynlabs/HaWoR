@@ -19,6 +19,7 @@ from lib.vis.renderer import Renderer
 from hawor.utils.process import get_mano_faces, run_mano, run_mano_left
 from hawor.utils.rotation import angle_axis_to_rotation_matrix, rotation_matrix_to_angle_axis
 from infiller.lib.model.network import TransformerModel
+from hawor.utils.device import get_device
 
 def load_hawor(checkpoint_path):
     from pathlib import Path
@@ -40,7 +41,7 @@ def load_hawor(checkpoint_path):
 
 def hawor_motion_estimation(args, start_idx, end_idx, seq_folder):
     model, model_cfg = load_hawor(args.checkpoint)
-    device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+    device = get_device()
     model = model.to(device)
     model.eval()
 
@@ -198,7 +199,13 @@ def hawor_motion_estimation(args, start_idx, end_idx, seq_folder):
                 json.dump(pred_dict, f, indent=1)
 
 
-            # get hand mask
+            # get hand mask -- ONLY consumed by masked DROID-SLAM. Skipping SLAM makes this block
+            # pure cost: it renders every frame's mesh through pytorch3d and fills a
+            # frames x H x W memmap (~3.8 GB per 60 s 1080p clip). It is also the last hard CUDA
+            # dependency in this file. HAWOR_SKIP_MASKS=1 (set by demo.py --skip-slam) drops it.
+            if os.environ.get('HAWOR_SKIP_MASKS', '0') == '1':
+                continue
+
             data_out["init_root_orient"] = rotation_matrix_to_angle_axis(data_out["init_root_orient"])
             data_out["init_hand_pose"] = rotation_matrix_to_angle_axis(data_out["init_hand_pose"])
             if do_flip: # left
@@ -209,15 +216,15 @@ def hawor_motion_estimation(args, start_idx, end_idx, seq_folder):
             vertices = outputs["vertices"][0].cpu()  # (T, N, 3)
             for img_i, _ in enumerate(img_ck):
                 if do_flip:
-                    faces = torch.from_numpy(faces_left).cuda()
+                    faces = torch.from_numpy(faces_left).to(device)
                 else:
-                    faces = torch.from_numpy(faces_right).cuda()
-                cam_R = torch.eye(3).unsqueeze(0).cuda()
-                cam_T = torch.zeros(1, 3).cuda()
+                    faces = torch.from_numpy(faces_right).to(device)
+                cam_R = torch.eye(3).unsqueeze(0).to(device)
+                cam_T = torch.zeros(1, 3).to(device)
                 cameras, lights = renderer.create_camera_from_cv(cam_R, cam_T)
                 verts_color = torch.tensor([0, 0, 255, 255]) / 255
                 vertices_i = vertices[[img_i]]
-                rend, mask = renderer.render_multiple(vertices_i.unsqueeze(0).cuda(), faces, verts_color.unsqueeze(0).cuda(), cameras, lights)
+                rend, mask = renderer.render_multiple(vertices_i.unsqueeze(0).to(device), faces, verts_color.unsqueeze(0).to(device), cameras, lights)
                 
                 model_masks[frame_ck[img_i]] |= mask
                 
@@ -231,7 +238,7 @@ def hawor_motion_estimation(args, start_idx, end_idx, seq_folder):
 def hawor_infiller(args, start_idx, end_idx, frame_chunks_all):
     # load infiller
     weight_path = args.infiller_weight
-    device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+    device = get_device()
     ckpt = torch.load(weight_path, map_location=device)
     pos_dim = 3
     shape_dim = 10

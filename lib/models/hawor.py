@@ -376,7 +376,12 @@ class HAWOR(pl.LightningModule):
 
         return output
 
-    def inference(self, imgfiles, boxes, img_focal, img_center, device='cuda', do_flip=False):
+    def inference(self, imgfiles, boxes, img_focal, img_center, device=None, do_flip=False):
+        # device=None -> the resolved device. The stock default was the string 'cuda', and the
+        # only caller (hawor_video.py) does not pass one, so a CPU run died here.
+        if device is None:
+            from hawor.utils.device import get_device
+            device = get_device()
         db = TrackDatasetEval(imgfiles, boxes, img_focal=img_focal, 
                         img_center=img_center, normalization=True, dilate=1.2, do_flip=do_flip)
 
