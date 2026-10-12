@@ -1,0 +1,12 @@
+[Unit]
+Description=Mount instance-store NVMe at /opt/dlami/nvme for HaWoR scratch
+After=local-fs.target
+Before=multi-user.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/hawor-scratch.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
