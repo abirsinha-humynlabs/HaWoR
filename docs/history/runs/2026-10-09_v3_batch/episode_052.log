@@ -1,0 +1,124 @@
+=========== [episode_052_v3] inputs ===========
+/dev/nvme1n1p1   50G   35G   16G  70% /
+=========== [episode_052_v3] 1/6 HaWoR inference (HAWOR_TRACK_FIX=1) ===========
+    "right": 1677
+  },
+  "detector_fired_frames": {
+    "left": 1747,
+    "right": 1677
+  },
+  "provenance_note": "depth_measured=True means HaWoR's ViT ran on that image frame. HaWoR interpolates the bbox across detector gaps, so that is wider than detector_fired_frames. depth_measured=False rows are the transformer infiller's output, with no image evidence.",
+  "final_valid_frames": {
+    "left": 1825,
+    "right": 1825
+  },
+  "slam_frames": 1825,
+  "roundtrip": {
+    "n": 3424,
+    "max_m": 1.7043263995346427e-07,
+    "median_m": 6.283684039596135e-08,
+    "p99_m": 1.2204388742733105e-07,
+    "frames_in_multiple_chunks": 0,
+    "multi_chunk_keys": []
+  },
+  "postprocessing": "none - raw HaWoR output"
+}
+=========== [episode_052_v3] 2/6 post-process (drop fabricated, smooth keypoints + head) ===========
+        "half_window_frames": 4.0,
+        "wrist_step_px_median_before": 8.992,
+        "wrist_step_px_median_after": 7.086,
+        "motion_retained_p90_pct": 93.9
+      }
+    },
+    {
+      "smooth_head_pose": {
+        "frames": 1825,
+        "half_window_frames": 3,
+        "lin_jitter_mm": [
+          1.528,
+          0.913
+        ],
+        "rot_jitter_deg": [
+          0.0639,
+          0.0444
+        ],
+        "rot_speed_p90_retained_pct": 94.8,
+        "translation_step_p90_retained_pct": 89.7
+      }
+    }
+  ],
+  "output_rows": 3424
+}
+=========== [episode_052_v3] 3/6 MediaPipe second opinion (isolated env) ===========
+  warnings.warn('SymbolDatabase.GetPrototype() is deprecated. Please '
+{
+  "frames_read": 1825,
+  "mp_detections": 3306,
+  "frames_with_a_hand": 1773,
+  "right": 1685,
+  "left": 1621
+}
+=========== [episode_052_v3] 4/6 per-hand handedness vote ===========
+{
+  "rows": 3424,
+  "mp_matched": 3278,
+  "mp_swapped": true,
+  "tracks": 10,
+  "tracks_flipped": 1,
+  "rows_flipped": 55,
+  "detail": [
+    {
+      "frames": [
+        1223,
+        1277
+      ],
+      "rows": 55,
+      "was": "right",
+      "now": "left",
+      "mp_votes": 8,
+      "mp_disagreement": 1.0
+    }
+  ]
+}
+=========== [episode_052_v3] 5/6 QC + gate ===========
+  },
+  "jitter_px": {
+    "right": {
+      "n": 1613,
+      "median": 11.569,
+      "p95": 38.826
+    },
+    "left": {
+      "n": 1741,
+      "median": 4.228,
+      "p95": 39.956
+    }
+  },
+  "rows": {
+    "total": 3424,
+    "observed": 3424,
+    "infilled": 0,
+    "left": 1802,
+    "right": 1622
+  },
+  "frames_drawn": [
+    "/home/ec2-user/hawor_runs/out/episode_052_v3/qc/episode_052_v3_f00000.png",
+    "/home/ec2-user/hawor_runs/out/episode_052_v3/qc/episode_052_v3_f00408.png",
+    "/home/ec2-user/hawor_runs/out/episode_052_v3/qc/episode_052_v3_f00427.png",
+    "/home/ec2-user/hawor_runs/out/episode_052_v3/qc/episode_052_v3_f00817.png",
+    "/home/ec2-user/hawor_runs/out/episode_052_v3/qc/episode_052_v3_f00855.png",
+    "/home/ec2-user/hawor_runs/out/episode_052_v3/qc/episode_052_v3_f01396.png",
+    "/home/ec2-user/hawor_runs/out/episode_052_v3/qc/episode_052_v3_f01824.png"
+  ]
+}
+  GATE reproj 0.0000 px OK | behind-lens 0.00% | boneCV 0.04128 | rows 3424
+=========== [episode_052_v3] 6/6 render (handedness honoured) + score ===========
+[sync] absolute frame_idx; 1825 video frames — no remap
+[handfix] froze handedness from npz['hand']; corrected 55 frame-label(s)
+[gravity] IMU up = [-0.224  0.036 -0.974]
+[panels] scene centre=[-0.05  0.02  0.05] lim=±1.01m z=[0.66,1.85] head-path span=[0.41 0.46]m
+[left_eye] v4 panels 2892x1080@30.0 | tracks=11 (L=6 R=5) | poses=1825
+[left_eye] wrote /home/ec2-user/hawor_runs/render/episode_052_v3/left_eye_wrist_traj_panels.mp4 (1825 frames)
+wrote /home/ec2-user/hawor_runs/out/episode_052_v3/eval/report.json
+wrote /home/ec2-user/hawor_runs/out/episode_052_v3/eval/report.md
+=========== [episode_052_v3] V3-DONE ===========

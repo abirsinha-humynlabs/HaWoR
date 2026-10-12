@@ -10,7 +10,7 @@ Batch ran 2026-10-09 08:50 → 19:32 UTC on a g4dn.xlarge (T4), 15/15 succeeded,
 QC gate (reprojection 0.0000 px, 0 % joints behind the lens). Each upload was size-verified against S3.
 
 Output: `s3://stage-humyn-egocentric-stereo-data/labelling_results/hand_pose_HaWoR/v3/<clip>/` — 16 files per clip
-(241 objects, 1.16 GB). Run logs: `v3/_run_artifacts/2026-10-09_batch/` (if uploaded — see §9).
+(241 objects, 1.16 GB). Run logs + per-clip timings: `docs/history/runs/2026-10-09_v3_batch/` in this repo.
 
 | clip | run min | rows kept | bone CV median |
 |---|---|---|---|
@@ -151,4 +151,4 @@ driver `run_clip.py` never saved). It did not produce v3 and is not used.
   NVMe instance store and were erased by the 2026-10-12 stop/start. Not part of any delivery; regenerate by
   re-running a clip. The published v3 npz keeps raw values for every delivered row, and `<clip>_v3_3d_keypoints.npz`
   is the raw HaWoR 3D output.
-- Run logs/timings: uploaded to `v3/_run_artifacts/2026-10-09_batch/` if the user approved/logged in at teardown.
+- Run logs/timings are preserved in git: `docs/history/runs/2026-10-09_v3_batch/` (batch.log, per-clip logs, timing.tsv).

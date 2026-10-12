@@ -1,0 +1,45 @@
+[2026-10-09T08:50:45Z] v3 batch start: 15 clips
+[2026-10-09T08:50:45Z] [1/15] run  episode_001  (group 'others')
+  done in 51 min | GATE reproj 0.0000 px OK | behind-lens 0.00% | boneCV 0.04134 | rows 3621
+  uploaded 16 files -> s3://stage-humyn-egocentric-stereo-data/labelling_results/hand_pose_HaWoR/v3/episode_001/
+[2026-10-09T09:42:24Z] [2/15] run  episode_002  (group 'others')
+  done in 62 min | GATE reproj 0.0000 px OK | behind-lens 0.00% | boneCV 0.05383 | rows 3245
+  uploaded 16 files -> s3://stage-humyn-egocentric-stereo-data/labelling_results/hand_pose_HaWoR/v3/episode_002/
+[2026-10-09T10:45:42Z] [3/15] run  episode_009  (group 'home')
+  done in 53 min | GATE reproj 0.0000 px OK | behind-lens 0.00% | boneCV 0.05187 | rows 2159
+  uploaded 16 files -> s3://stage-humyn-egocentric-stereo-data/labelling_results/hand_pose_HaWoR/v3/episode_009/
+[2026-10-09T11:39:45Z] [4/15] run  episode_046  (group 'home')
+  done in 24 min | GATE reproj 0.0000 px OK | behind-lens 0.00% | boneCV 0.02986 | rows 1756
+  uploaded 16 files -> s3://stage-humyn-egocentric-stereo-data/labelling_results/hand_pose_HaWoR/v3/episode_046/
+[2026-10-09T12:05:07Z] [5/15] skip episode_047 (already uploaded)
+[2026-10-09T12:05:07Z] [6/15] run  episode_048  (group 'home')
+  done in 46 min | GATE reproj 0.0000 px OK | behind-lens 0.00% | boneCV 0.03841 | rows 3628
+  uploaded 16 files -> s3://stage-humyn-egocentric-stereo-data/labelling_results/hand_pose_HaWoR/v3/episode_048/
+[2026-10-09T12:51:37Z] [7/15] run  episode_052  (group 'home')
+  done in 47 min | GATE reproj 0.0000 px OK | behind-lens 0.00% | boneCV 0.04128 | rows 3424
+  uploaded 16 files -> s3://stage-humyn-egocentric-stereo-data/labelling_results/hand_pose_HaWoR/v3/episode_052/
+[2026-10-09T13:39:21Z] [8/15] run  Hospitality_plating_salad_vegetables_64  (group 'hospitality')
+  done in 40 min | GATE reproj 0.0000 px OK | behind-lens 0.00% | boneCV 0.03286 | rows 2404
+  uploaded 16 files -> s3://stage-humyn-egocentric-stereo-data/labelling_results/hand_pose_HaWoR/v3/Hospitality_plating_salad_vegetables_64/
+[2026-10-09T14:20:32Z] [9/15] run  Hospitality_pouring_pink_yogurt_into_bowls_73  (group 'hospitality')
+  done in 47 min | GATE reproj 0.0000 px OK | behind-lens 0.00% | boneCV 0.03222 | rows 3606
+  uploaded 16 files -> s3://stage-humyn-egocentric-stereo-data/labelling_results/hand_pose_HaWoR/v3/Hospitality_pouring_pink_yogurt_into_bowls_73/
+[2026-10-09T15:08:32Z] [10/15] run  Hospitality_pouring_yogurrt_into_bowls_72  (group 'hospitality')
+  done in 47 min | GATE reproj 0.0000 px OK | behind-lens 0.00% | boneCV 0.03261 | rows 3631
+  uploaded 16 files -> s3://stage-humyn-egocentric-stereo-data/labelling_results/hand_pose_HaWoR/v3/Hospitality_pouring_yogurrt_into_bowls_72/
+[2026-10-09T15:56:52Z] [11/15] run  Others_blowing_190  (group 'others')
+  done in 42 min | GATE reproj 0.0000 px OK | behind-lens 0.00% | boneCV 0.03252 | rows 1788
+  uploaded 16 files -> s3://stage-humyn-egocentric-stereo-data/labelling_results/hand_pose_HaWoR/v3/Others_blowing_190/
+[2026-10-09T16:39:25Z] [12/15] run  construction_cutting_ply_using_machine_516  (group 'industrial/industrial noida')
+  done in 48 min | GATE reproj 0.0000 px OK | behind-lens 0.00% | boneCV 0.00472 | rows 3639
+  uploaded 16 files -> s3://stage-humyn-egocentric-stereo-data/labelling_results/hand_pose_HaWoR/v3/construction_cutting_ply_using_machine_516/
+[2026-10-09T17:28:21Z] [13/15] run  construction_mixing_cement_using_equipment_cement_chemicali_mixing_503  (group 'industrial/industrial noida')
+  done in 41 min | GATE reproj 0.0000 px OK | behind-lens 0.00% | boneCV 0.04242 | rows 1765
+  uploaded 16 files -> s3://stage-humyn-egocentric-stereo-data/labelling_results/hand_pose_HaWoR/v3/construction_mixing_cement_using_equipment_cement_chemicali_mixing_503/
+[2026-10-09T18:10:47Z] [14/15] run  construction_removing_grooting_using_hand_blade_506  (group 'industrial/industrial noida')
+  done in 35 min | GATE reproj 0.0000 px OK | behind-lens 0.00% | boneCV 0.02968 | rows 1815
+  uploaded 16 files -> s3://stage-humyn-egocentric-stereo-data/labelling_results/hand_pose_HaWoR/v3/construction_removing_grooting_using_hand_blade_506/
+[2026-10-09T18:46:57Z] [15/15] run  construction_sanding_pipe_507  (group 'industrial/industrial noida')
+  done in 44 min | GATE reproj 0.0000 px OK | behind-lens 0.00% | boneCV 0.02881 | rows 3617
+  uploaded 16 files -> s3://stage-humyn-egocentric-stereo-data/labelling_results/hand_pose_HaWoR/v3/construction_sanding_pipe_507/
+[2026-10-09T19:32:08Z] v3 batch end: done=15 uploaded=15 failed=0 of 15

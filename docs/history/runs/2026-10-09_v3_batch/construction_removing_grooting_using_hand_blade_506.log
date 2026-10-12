@@ -1,0 +1,124 @@
+=========== [construction_removing_grooting_using_hand_blade_506_v3] inputs ===========
+/dev/nvme1n1p1   50G   36G   15G  71% /
+=========== [construction_removing_grooting_using_hand_blade_506_v3] 1/6 HaWoR inference (HAWOR_TRACK_FIX=1) ===========
+    "right": 70
+  },
+  "detector_fired_frames": {
+    "left": 1745,
+    "right": 70
+  },
+  "provenance_note": "depth_measured=True means HaWoR's ViT ran on that image frame. HaWoR interpolates the bbox across detector gaps, so that is wider than detector_fired_frames. depth_measured=False rows are the transformer infiller's output, with no image evidence.",
+  "final_valid_frames": {
+    "left": 1817,
+    "right": 1327
+  },
+  "slam_frames": 1817,
+  "roundtrip": {
+    "n": 1815,
+    "max_m": 1.8327825798146254e-07,
+    "median_m": 8.067309568187788e-08,
+    "p99_m": 1.528352902274859e-07,
+    "frames_in_multiple_chunks": 0,
+    "multi_chunk_keys": []
+  },
+  "postprocessing": "none - raw HaWoR output"
+}
+=========== [construction_removing_grooting_using_hand_blade_506_v3] 2/6 post-process (drop fabricated, smooth keypoints + head) ===========
+        "half_window_frames": 4.0,
+        "wrist_step_px_median_before": 4.456,
+        "wrist_step_px_median_after": 3.269,
+        "motion_retained_p90_pct": 86.0
+      }
+    },
+    {
+      "smooth_head_pose": {
+        "frames": 1817,
+        "half_window_frames": 3,
+        "lin_jitter_mm": [
+          1.1,
+          0.551
+        ],
+        "rot_jitter_deg": [
+          0.0554,
+          0.0355
+        ],
+        "rot_speed_p90_retained_pct": 91.1,
+        "translation_step_p90_retained_pct": 100.6
+      }
+    }
+  ],
+  "output_rows": 1815
+}
+=========== [construction_removing_grooting_using_hand_blade_506_v3] 3/6 MediaPipe second opinion (isolated env) ===========
+  warnings.warn('SymbolDatabase.GetPrototype() is deprecated. Please '
+{
+  "frames_read": 1817,
+  "mp_detections": 1969,
+  "frames_with_a_hand": 1653,
+  "right": 1608,
+  "left": 361
+}
+=========== [construction_removing_grooting_using_hand_blade_506_v3] 4/6 per-hand handedness vote ===========
+{
+  "rows": 1815,
+  "mp_matched": 1571,
+  "mp_swapped": true,
+  "tracks": 19,
+  "tracks_flipped": 1,
+  "rows_flipped": 37,
+  "detail": [
+    {
+      "frames": [
+        945,
+        986
+      ],
+      "rows": 37,
+      "was": "left",
+      "now": "right",
+      "mp_votes": 24,
+      "mp_disagreement": 1.0
+    }
+  ]
+}
+=========== [construction_removing_grooting_using_hand_blade_506_v3] 5/6 QC + gate ===========
+  },
+  "jitter_px": {
+    "right": {
+      "n": 86,
+      "median": 11.855,
+      "p95": 100.805
+    },
+    "left": {
+      "n": 1685,
+      "median": 3.131,
+      "p95": 569.244
+    }
+  },
+  "rows": {
+    "total": 1815,
+    "observed": 1815,
+    "infilled": 0,
+    "left": 1708,
+    "right": 107
+  },
+  "frames_drawn": [
+    "/home/ec2-user/hawor_runs/out/construction_removing_grooting_using_hand_blade_506_v3/qc/construction_removing_grooting_using_hand_blade_506_v3_f00000.png",
+    "/home/ec2-user/hawor_runs/out/construction_removing_grooting_using_hand_blade_506_v3/qc/construction_removing_grooting_using_hand_blade_506_v3_f00342.png",
+    "/home/ec2-user/hawor_runs/out/construction_removing_grooting_using_hand_blade_506_v3/qc/construction_removing_grooting_using_hand_blade_506_v3_f00443.png",
+    "/home/ec2-user/hawor_runs/out/construction_removing_grooting_using_hand_blade_506_v3/qc/construction_removing_grooting_using_hand_blade_506_v3_f00911.png",
+    "/home/ec2-user/hawor_runs/out/construction_removing_grooting_using_hand_blade_506_v3/qc/construction_removing_grooting_using_hand_blade_506_v3_f00929.png",
+    "/home/ec2-user/hawor_runs/out/construction_removing_grooting_using_hand_blade_506_v3/qc/construction_removing_grooting_using_hand_blade_506_v3_f01350.png",
+    "/home/ec2-user/hawor_runs/out/construction_removing_grooting_using_hand_blade_506_v3/qc/construction_removing_grooting_using_hand_blade_506_v3_f01816.png"
+  ]
+}
+  GATE reproj 0.0000 px OK | behind-lens 0.00% | boneCV 0.02968 | rows 1815
+=========== [construction_removing_grooting_using_hand_blade_506_v3] 6/6 render (handedness honoured) + score ===========
+[sync] absolute frame_idx; 1817 video frames — no remap
+[handfix] froze handedness from npz['hand']; corrected 1278 frame-label(s)
+[gravity] IMU up = [-0.013 -0.187 -0.982]
+[panels] scene centre=[ 0.03 -0.36  0.09] lim=±1.63m z=[0.55,2.16] head-path span=[1.46 0.74]m
+[left_eye] v4 panels 2892x1080@30.0 | tracks=17 (L=13 R=4) | poses=1817
+[left_eye] wrote /home/ec2-user/hawor_runs/render/construction_removing_grooting_using_hand_blade_506_v3/left_eye_wrist_traj_panels.mp4 (1817 frames)
+wrote /home/ec2-user/hawor_runs/out/construction_removing_grooting_using_hand_blade_506_v3/eval/report.json
+wrote /home/ec2-user/hawor_runs/out/construction_removing_grooting_using_hand_blade_506_v3/eval/report.md
+=========== [construction_removing_grooting_using_hand_blade_506_v3] V3-DONE ===========
