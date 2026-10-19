@@ -9,7 +9,9 @@ Read this before doing anything on a new instance. It supersedes `docs/history/H
 Batch ran 2026-10-09 08:50 → 19:32 UTC on a g4dn.xlarge (T4), 15/15 succeeded, 0 failed, every clip passed the
 QC gate (reprojection 0.0000 px, 0 % joints behind the lens). Each upload was size-verified against S3.
 
-Output: `s3://stage-humyn-egocentric-stereo-data/labelling_results/hand_pose_HaWoR/v3/<clip>/` — 16 files per clip
+Output: `s3://stage-humyn-egocentric-stereo-data/labelling_results/hand_pose_HaWoR/v3/<input path>/`, mirroring the
+input below `validation-result/` (e.g. `…/v3/ZED/home/episode_047/`; moved there from `v3/<clip>/` on 2026-10-18,
+keys and sizes verified) — 16 files per clip
 (241 objects, 1.16 GB). Run logs + per-clip timings: `docs/history/runs/2026-10-09_v3_batch/` in this repo.
 
 | clip | run min | rows kept | bone CV median |
@@ -105,7 +107,7 @@ driver `run_clip.py` never saved). It did not produce v3 and is not used.
 
 - One clip, detached (survives SSH/VS Code drops): `~/HaWoR/delivery/batch/hawor_tmux.sh <clip> <group> [upload]`
   (`upload` here means `run_v3_clip.sh`'s own upload to `hand_pose_HaWoR/<clip>_v3/` — prefer the batch runner).
-- A list of clips → `v3/<clip>/`: `JOBS=<tsv> ~/HaWoR/delivery/batch/v3_prefetch.sh` (pulls all inputs to NVMe so
+- A list of clips → `v3/<input path>/` (e.g. `v3/ZED/home/episode_047/`): `JOBS=<tsv> ~/HaWoR/delivery/batch/v3_prefetch.sh` (pulls all inputs to NVMe so
   an SSO expiry cannot stop inference), then in tmux: `JOBS=<tsv> ~/HaWoR/delivery/batch/v3_batch.sh`.
   Resumable; per-clip state in `~/hawor_runs/v3_state/`; logs in `~/hawor_runs/logs/v3batch/`. If SSO expired
   mid-run: log in, then `v3_batch.sh --upload-only`. Note `v3_state/` marks clips uploaded — for a new list on a
@@ -113,6 +115,20 @@ driver `run_clip.py` never saved). It did not produce v3 and is not used.
 - Cost on a T4: ~45–55 min per 60 s 1080p clip (detect 3, motion estimation 13–18, SLAM 3–8, post 2,
   render ~18). One clip at a time: SLAM peaks at 13.4 of 15 GB GPU and motion estimation at ~12 GB host RAM.
   ~3.8 GB scratch per clip on NVMe (the batch runner deletes it after upload).
+- **Long clips (minutes) from the prod bucket** — `delivery/long/` (added 2026-10-18), keypoints only, no render yet:
+  `make_jobs.sh <clips.csv> > jobs.tsv` (clip `a__b__c` → source `chunking/a/b/c/`, output `v3/a/b/c/`; checks every
+  source exists), then in tmux `JOBS=<tsv> delivery/long/long_batch.sh` (`--upload-only` to retry uploads). Reads prod
+  with AWS profile `prod` (read-only role), writes only to the stage `v3/` prefix. `run_v3_long.sh` extracts frames
+  once with HaWoR's own ffmpeg command, runs `run_hawor_clip.py` unchanged on ~60 s windows (1800 frames, 30-frame
+  overlap each side, only window cores kept — `merge_windows.py`), then post-process / MediaPipe / handedness vote /
+  `pp_correct.py` / QC once on the merged clip. No head pose exists for these sources. State in
+  `~/hawor_runs/long_state/`, logs in `~/hawor_runs/logs/long/`; job lists live in `~/hawor_runs/jobs/` (not in git —
+  they name customer sites). T4 cost: ~14–18 min per window; 48–164 min per 5–5.5 min clip depending on how often
+  hands are in view.
+- **Principal point**: HaWoR places hands with a camera centred on the image (`hawor_video.py:96`); only the focal
+  comes from the calibration. `pp_correct.py` moves kp3d/kp2d onto the true principal point and stores
+  `pp_offset_px`. Offsets: ZED and bitrobot < 2 px (the published ZED v3 is unaffected), akai up to (+47, −25) px.
+  `fix_uploaded.sh` applies it to a clip uploaded without it.
 
 ## 6. Provenance facts (settled)
 
@@ -144,6 +160,10 @@ driver `run_clip.py` never saved). It did not produce v3 and is not used.
 4. Merge `my-changes` → `main` (PR) so a default clone gets the pipeline.
 5. Ground truth: every accuracy statement so far is a proxy.
 6. Full `egoforce` env would need a larger root volume.
+7. **Prod long-clip run** (2026-10-18): 10 clips (5 akai + 5 bitrobot, `~/hawor_runs/jobs/prod10.tsv`) of the 117 in
+   the user's `hand21kp_rendered_clips_table.csv`, to tally HaWoR against the other models' npz in prod
+   `work_items/hand_detection/model_output_30fps/<clip>/`. Compare hands by position, not only `(frame, hand)`: the
+   other model labels many hands 2 (= other / bystander) where HaWoR always says L or R. Render comes later.
 
 ## 9. What is NOT preserved
 

@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Run every clip in v3_jobs.tsv (next to this script; override with JOBS=<file>) through the v3
-# pipeline and publish it to
-#   s3://stage-humyn-egocentric-stereo-data/labelling_results/hand_pose_HaWoR/v3/<clip>/
+# pipeline and publish it under v3/, mirroring the input's path below validation-result/:
+#   validation-result/ZED/home/episode_047/left_eye.mp4
+#   -> s3://stage-humyn-egocentric-stereo-data/labelling_results/hand_pose_HaWoR/v3/ZED/home/episode_047/
 #
 #   v3_batch.sh                 run + upload everything not yet uploaded (resumable)
 #   v3_batch.sh --upload-only   only retry uploads of clips that ran but did not upload
@@ -22,8 +23,10 @@ DST_PFX=labelling_results/hand_pose_HaWoR/v3        # the ONLY place this script
 export AWS_PROFILE=stage
 ts(){ date -u +%Y-%m-%dT%H:%M:%SZ; }
 
-upload_clip(){                                       # $1 = clip
-  local C="$1" OUT=~/hawor_runs/out/$1_v3 D="s3://$B/$DST_PFX/$1/" f rc=0
+upload_clip(){                                       # $1 = clip, $2 = input_dir from the job list
+  local C="$1" REL="${2#validation-result/}" OUT=~/hawor_runs/out/$1_v3 D f rc=0
+  [ -n "$REL" ] && [ "$REL" != "$2" ] || { echo "  bad input_dir '$2' for $C"; return 1; }
+  D="s3://$B/$DST_PFX/$REL/"
   case "$D" in "s3://$B/labelling_results/hand_pose_HaWoR/v3/"?*/) ;; *) echo "refusing dest $D"; return 1;; esac
   for f in "${C}_v3_hand21_keypoints.npz" "${C}_v3_3d_keypoints.npz" "${C}_v3_hawor_wrist_traj_panels.mp4" \
            "${C}_v3_v3_report.json" "${C}_v3_handedness_report.json" "head_pose_6dof_smoothed.npz"; do
@@ -37,7 +40,7 @@ upload_clip(){                                       # $1 = clip
             "${C}_v3_hawor_wrist_traj_panels.mp4" "${C}_v3_v3_report.json" "${C}_v3_handedness_report.json" \
             "head_pose_6dof_smoothed.npz"; do [ -f "$f" ] && echo "$f $(stat -c%s "$f")"; done
           find eval qc -type f -printf '%p %s\n'; } | sort )
-  have=$(aws s3 ls "$D" --recursive | awk -v p="$DST_PFX/$C/" '{k=$4; for(i=5;i<=NF;i++)k=k" "$i; sub("^"p,"",k); print k, $3}' | sort)
+  have=$(aws s3 ls "$D" --recursive | awk -v p="$DST_PFX/$REL/" '{k=$4; for(i=5;i<=NF;i++)k=k" "$i; sub("^"p,"",k); print k, $3}' | sort)
   [ "$want" = "$(comm -12 <(echo "$want") <(echo "$have"))" ] || { echo "  verify mismatch for $C"; return 1; }
   echo "  uploaded $(echo "$want" | wc -l) files -> $D"
 }
@@ -45,7 +48,8 @@ upload_clip(){                                       # $1 = clip
 if [ "${1:-}" = "--upload-only" ]; then
   for d in "$ST"/*.done; do
     [ -e "$d" ] || continue; C=$(basename "$d" .done); [ -f "$ST/$C.uploaded" ] && continue
-    echo "[$(ts)] upload $C"; upload_clip "$C" && touch "$ST/$C.uploaded" || echo "  UPLOAD-FAIL $C"
+    DIR=$(grep -v '^#' "$JOBS" | awk -F'\t' -v c="$C" '$1==c{print $2}')
+    echo "[$(ts)] upload $C"; upload_clip "$C" "$DIR" && touch "$ST/$C.uploaded" || echo "  UPLOAD-FAIL $C"
   done; exit 0
 fi
 
@@ -72,7 +76,7 @@ while IFS=$'\t' read -r C DIR HEAD <&3; do
       continue
     fi
   fi
-  if upload_clip "$C"; then
+  if upload_clip "$C" "$DIR"; then
     touch "$ST/$C.uploaded"
     rm -rf ~/hawor_runs/work/${C}_v3/left_eye          # frames + 3.8 GB mask memmap; inputs kept
   else

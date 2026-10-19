@@ -26,4 +26,5 @@ GPU DLAMI (OSS Nvidia Driver, PyTorch, Amazon Linux 2023) with an NVMe instance 
 
 ## Run
 - One clip: `delivery/batch/hawor_tmux.sh <clip> <group>` → `~/hawor_runs/out/<clip>_v3/`.
-- Batch → `v3/<clip>/`: `JOBS=<tsv> delivery/batch/v3_prefetch.sh`, then `JOBS=<tsv> delivery/batch/v3_batch.sh` in tmux.
+- Batch → `v3/<input path below validation-result/>/` (e.g. `v3/ZED/home/episode_047/`): `JOBS=<tsv> delivery/batch/v3_prefetch.sh`, then `JOBS=<tsv> delivery/batch/v3_batch.sh` in tmux.
+- Long prod clips (akai/bitrobot) → `v3/<path below chunking/>/`: `delivery/long/make_jobs.sh`, then `JOBS=<tsv> delivery/long/long_batch.sh` in tmux (HANDOFF §5).
