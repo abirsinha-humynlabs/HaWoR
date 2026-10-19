@@ -1,6 +1,7 @@
 # HaWoR fork — notes for Claude
 
-Read `docs/HANDOFF.md` first: current state, what was done last, how to set up, open items.
+Read `SETUP.md` first (setup on a new instance, repo map, how to run, traps), then `docs/HANDOFF.md` (current state,
+what was done last, open items).
 
 ## Branch
 Work on **`my-changes`**. `main` is behind and lacks the v3 pipeline (`delivery/`), the batch tooling and the setup.
@@ -9,14 +10,17 @@ Work on **`my-changes`**. `main` is behind and lacks the v3 pipeline (`delivery/
 - S3 writes only to `s3://stage-humyn-egocentric-stereo-data/labelling_results/hand_pose_HaWoR/v3/`.
   Any other prefix: ask the user first. Reads elsewhere in the bucket are fine.
 - Never force-push. Never commit weights, videos, MANO `.pkl`, credentials. This repo is **public**: keep AWS account
-  ids and SSO start URLs out of it.
+  ids and SSO start URLs out of it. Never commit job lists or CSVs that name customer sites (keep them in
+  `~/hawor_runs/jobs/`); stage commits by explicit path.
+- Prod bucket `prod-egc-stereo-v2-data`: read-only, via SSO profile `prod` (needed for long clips).
+- Never pass `upload` to `run_v3_clip.sh` / `hawor_tmux.sh`, and never run `delivery/v1v2/`: they write outside `v3/`.
 - AWS is SSO only (`aws sso login --profile stage --use-device-code`, expires ~daily); the instance role cannot read
   the bucket. If the `stage` profile is missing, ask the user for the SSO start URL / account id.
 - Long-running jobs go in tmux (`delivery/batch/hawor_tmux.sh`, or `tmux new -d -s ...`).
 
 ## New instance
 GPU DLAMI (OSS Nvidia Driver, PyTorch, Amazon Linux 2023) with an NVMe instance store, repo at `~/HaWoR` on
-`my-changes`, SSO logged in, then `bash setup/setup_instance.sh` (idempotent, ~1 h, ends in `VERIFY_OK`).
+`my-changes`, SSO logged in, then `bash setup/setup_instance.sh` (idempotent, ~1.5 h, ends in `VERIFY_OK`).
 
 ## Layout after setup
 - `~/projects/HaWoR` → this repo; `~/projects/EgoForce` (branch `run/type2-fusion`) — `delivery/` scripts hardcode both.

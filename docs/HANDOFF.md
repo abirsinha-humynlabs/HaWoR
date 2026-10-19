@@ -1,9 +1,15 @@
-# HaWoR — handoff (state as of 2026-10-12)
+# HaWoR — handoff (state as of 2026-10-19)
 
 Read this before doing anything on a new instance. It supersedes `docs/history/HaWoR_HANDOFF_2026-10-07.md`
 (kept for history; several of its claims were corrected below).
 
 ## 1. Where things stand — the last thing we did
+
+**Latest (2026-10-19).** Prod long-clip run stopped by the user at 5 of 10 clips (4 akai + 1 bitrobot), all uploaded
+and size-verified under `v3/<path below chunking/>/`; resume with §8 item 7. Known bug in those 5 npz: `window` is not
+row-aligned (see §8 item 9). A failure-mode review (handedness, false hands, blur, fast motion, occlusion, low light)
+lives in a Claude Docs doc; ask the user for access. Setup and traps: `SETUP.md`. The ZED 2026-10-09 batch below is the
+previous milestone.
 
 **The v3 pipeline was run on all 15 videos that had ever been through HaWoR, and published.**
 Batch ran 2026-10-09 08:50 → 19:32 UTC on a g4dn.xlarge (T4), 15/15 succeeded, 0 failed, every clip passed the
@@ -53,7 +59,7 @@ HaWoR's model, weights and inference are unchanged. On top (all on branch `my-ch
 - **v3 — handedness**: `mp_handedness.py` (MediaPipe as an independent opinion, labels swapped because MediaPipe
   assumes a mirrored image) + `fix_handedness.py` (per-physical-hand vote → `npz['hand']`);
   `render_v4_panels_handfix.py` honours `npz['hand']` instead of re-deriving L/R from wrist x.
-- Driver: `delivery/run_v3_clip.sh <clip> <group> [upload] [--fresh]` (6 stages; 3 conda envs).
+- Driver: `delivery/run_v3_clip.sh <clip> <group> [--fresh]` (its legacy `upload` argument writes outside `v3/`: never use it) (6 stages; 3 conda envs).
 
 Trade-offs: v3 is not raw model output; coverage drops (fabricated rows removed); bone CV rises slightly from
 per-coordinate smoothing; agreement with an independent 2D model (M3 proxy) is unchanged. No ground-truth accuracy
@@ -77,7 +83,7 @@ script, these docs.
 ## 4. Setting up a new instance
 
 1. Launch **"Deep Learning OSS Nvidia Driver AMI GPU PyTorch (Amazon Linux 2023)"** on a GPU instance **with an NVMe
-   instance store** (g4dn.xlarge was used: T4 16 GB, 4 vCPU, 16 GB RAM; g5.xlarge also fine). Root ≥ 50 GB.
+   instance store** (g4dn.xlarge was used: T4 16 GB, 4 vCPU, 16 GB RAM; g5.xlarge also fine). Root 100 GB.
    A bare AL2023 AMI cost a prior session a day on drivers — use the DLAMI.
 2. `git clone -b my-changes https://github.com/abirsinha-humynlabs/HaWoR.git ~/HaWoR`
 3. AWS SSO profile `stage` (ask the user for the start URL and account id — deliberately not in this public repo):
@@ -105,7 +111,7 @@ driver `run_clip.py` never saved). It did not produce v3 and is not used.
 
 ## 5. Running
 
-- One clip, detached (survives SSH/VS Code drops): `~/HaWoR/delivery/batch/hawor_tmux.sh <clip> <group> [upload]`
+- One clip, detached (survives SSH/VS Code drops): `~/HaWoR/delivery/batch/hawor_tmux.sh <clip> <group>` (never pass `upload`)
   (`upload` here means `run_v3_clip.sh`'s own upload to `hand_pose_HaWoR/<clip>_v3/` — prefer the batch runner).
 - A list of clips → `v3/<input path>/` (e.g. `v3/ZED/home/episode_047/`): `JOBS=<tsv> ~/HaWoR/delivery/batch/v3_prefetch.sh` (pulls all inputs to NVMe so
   an SSO expiry cannot stop inference), then in tmux: `JOBS=<tsv> ~/HaWoR/delivery/batch/v3_batch.sh`.
@@ -123,7 +129,7 @@ driver `run_clip.py` never saved). It did not produce v3 and is not used.
   overlap each side, only window cores kept — `merge_windows.py`), then post-process / MediaPipe / handedness vote /
   `pp_correct.py` / QC once on the merged clip. No head pose exists for these sources. State in
   `~/hawor_runs/long_state/`, logs in `~/hawor_runs/logs/long/`; job lists live in `~/hawor_runs/jobs/` (not in git —
-  they name customer sites). T4 cost: ~14–18 min per window; 48–164 min per 5–5.5 min clip depending on how often
+  they name customer sites). T4 cost: 14–27 min per window; about 100–165 min per 5-minute clip depending on how often
   hands are in view.
 - **Principal point**: HaWoR places hands with a camera centred on the image (`hawor_video.py:96`); only the focal
   comes from the calibration. `pp_correct.py` moves kp3d/kp2d onto the true principal point and stores
@@ -156,19 +162,33 @@ driver `run_clip.py` never saved). It did not produce v3 and is not used.
    its panel video before trusting it.
 2. **14 clips the fleet planned but never ran** — ready job list: `delivery/batch/v3_jobs_next14.tsv`.
 3. **Same-level comparison** vs the incumbent (WiLoR + MediaPipe + ADAPT smoothing): v3 vs incumbent on the same
-   clips, keyed on `(frame, hand)` — never done; HaWoR's earlier "jitter disadvantage" compared raw vs smoothed.
+   clips, pairing hands by 2D wrist position (`(frame, hand)` is not unique) — never done; HaWoR's earlier "jitter disadvantage" compared raw vs smoothed.
 4. Merge `my-changes` → `main` (PR) so a default clone gets the pipeline.
 5. Ground truth: every accuracy statement so far is a proxy.
 6. Full `egoforce` env would need a larger root volume.
 7. **Prod long-clip run** (2026-10-18): 10 clips (5 akai + 5 bitrobot, `~/hawor_runs/jobs/prod10.tsv`) of the 117 in
    the user's `hand21kp_rendered_clips_table.csv`, to tally HaWoR against the other models' npz in prod
    `work_items/hand_detection/model_output_30fps/<clip>/`. Compare hands by position, not only `(frame, hand)`: the
-   other model labels many hands 2 (= other / bystander) where HaWoR always says L or R. Render comes later.
+   other model labels many hands 2 (= bystander or a 3rd+ hand) where HaWoR always says L or R. Render comes later.
+   **Status 2026-10-19:** stopped by the user after 5 of 10: the first 5 rows of `prod10.tsv` (4 akai + 1 bitrobot) are
+   done and uploaded (size-verified); the last 5 are not run. On this box, resume with the same job list (`long_state/`
+   skips the finished ones). On a new box, get the job list from the user and mark the 5 done first (`SETUP.md` §8).
+8. **Failure-mode review** (2026-10-19, a Claude Docs doc; ask the user for access): handedness, false hands (feet,
+   bystanders), blur, fast motion, occlusion, low light, with what stock HaWoR does, what we changed and measured results
+   on the 5 prod clips. Main findings: HaWoR's 3D model only sees frames with a box (no gap interpolation on video); with
+   our pinned ultralytics 8.4.150 the default TrackTrack tracker keeps only tracked boxes whenever a track is live, and a
+   new track needs a box above 0.7 (a lost track can be re-found within 30 frames). How many hands that gate discards was
+   never measured.
+9. **Known bug, long-clip npz:** `window` keeps its pre-drop length (postprocess_v3.py filters a fixed key list without
+   it), so it is not row-aligned in the 5 uploaded clips. Fix = add it to that list and regenerate; ask the user before
+   re-uploading. Leftovers on this box: partial work for akai ego-010 and episode_062 (the next14 batch was started on
+   2026-10-14 and stopped in its first clip).
 
 ## 9. What is NOT preserved
 
 - Raw stage-1 intermediates of the 2026-10-09 batch (all-row raw npz incl. infilled rows, MediaPipe npz) lived on the
   NVMe instance store and were erased by the 2026-10-12 stop/start. Not part of any delivery; regenerate by
-  re-running a clip. The published v3 npz keeps raw values for every delivered row, and `<clip>_v3_3d_keypoints.npz`
-  is the raw HaWoR 3D output.
+  re-running a clip. The published v3 npz keeps raw (unsmoothed) values for every delivered row. Note that
+  `<clip>_v3_3d_keypoints.npz` holds only the coverage denominator (frame indices, K), not 3D keypoints, so the 3D of
+  dropped (infilled) rows is not kept anywhere.
 - Run logs/timings are preserved in git: `docs/history/runs/2026-10-09_v3_batch/` (batch.log, per-clip logs, timing.tsv).

@@ -4,7 +4,7 @@
 #
 # Prerequisites
 #   * AWS "Deep Learning OSS Nvidia Driver AMI GPU PyTorch (Amazon Linux 2023)", GPU instance WITH an
-#     NVMe instance store (g4dn.xlarge was used; g5 works too). Root volume >= 50 GB.
+#     NVMe instance store (g4dn.xlarge was used; g5 works too). Root volume 100 GB.
 #   * This repo cloned on branch my-changes, with its submodules (the script inits them).
 #   * SSO login for profile 'stage' (needed for the MANO step and for running clips):
 #         aws sso login --profile stage --use-device-code
